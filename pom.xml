@@ -8,11 +8,11 @@
         <version>3.5.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>org.xuxuchat.app</groupId>
-    <artifactId>xuxuchat-app-api</artifactId>
+    <groupId>org.nutri.app</groupId>
+    <artifactId>xuxuchat-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>xuxuchat-app-api</name>
-    <description>xuxuchat-app-api</description>
+    <name>xuxuchat-api</name>
+    <description>xuxuchat-api</description>
     <url/>
     <licenses>
         <license/>
