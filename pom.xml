@@ -178,6 +178,7 @@
     </dependencies>
 
     <build>
+        <finalName>socialmedia-api</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

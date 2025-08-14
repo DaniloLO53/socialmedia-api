@@ -1,0 +1,9 @@
+# Rodar em prod:
+# docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+
+services:
+  app:
+    container_name: socialmedia-app-prod # Opcional: nome diferente para prod
+    ports:
+      # Mapeamento para PRODUÇÃO: 8080 (máquina) -> 8080 (contêiner)
+      - "8080:8080"
