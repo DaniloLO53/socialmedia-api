@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.nutri.app</groupId>
-    <artifactId>xuxuchat-api</artifactId>
+    <artifactId>socialmedia-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>xuxuchat-api</name>
-    <description>xuxuchat-api</description>
+    <name>socialmedia-api</name>
+    <description>socialmedia-api</description>
     <url/>
     <licenses>
         <license/>

@@ -1,4 +1,4 @@
-package org.xuxuchat.app;
+package org.socialmedia.app;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
