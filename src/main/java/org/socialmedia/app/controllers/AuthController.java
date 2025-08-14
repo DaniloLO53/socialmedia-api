@@ -23,6 +23,11 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.status(HttpStatus.OK).body("Hello, world");
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserInfoPayload> getUserInfo(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         UserInfoPayload payload = authService.getUserInfoByUserDetails(userDetails);
