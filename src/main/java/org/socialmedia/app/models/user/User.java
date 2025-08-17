@@ -8,8 +8,10 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.socialmedia.app.models.nodes.Node;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -64,4 +66,7 @@ public class User {
     @Enumerated(EnumType.STRING) // Armazena o nome do enum ("ONLINE", "OFFLINE") no banco
     @Column(name = "account_status", nullable = false)
     private AccountStatus accountStatus;
+
+    @OneToMany(mappedBy = "creator", cascade = { CascadeType.MERGE, CascadeType.PERSIST }, orphanRemoval = false)
+    private List<Node> nodes;
 }
