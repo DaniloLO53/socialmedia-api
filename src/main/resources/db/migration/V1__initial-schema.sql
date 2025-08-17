@@ -27,6 +27,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION prevent_assigned_at_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 'OLD' representa a linha como ela estava ANTES do update.
+    -- 'NEW' representa a linha como ela ficará DEPOIS do update.
+    -- Usamos 'IS DISTINCT FROM' para tratar corretamente valores NULL.
+    IF NEW.assigned_at IS DISTINCT FROM OLD.assigned_at THEN
+        -- Se o valor de 'assigned_at' estiver sendo alterado, lançamos um erro.
+        RAISE EXCEPTION 'Column "assigned_at" is not updatable';
+    END IF;
+
+    -- Se a coluna 'assigned_at' não foi alterada, a operação é permitida.
+    -- Retornamos 'NEW' para que o update das outras colunas possa continuar.
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(100) NOT NULL,
@@ -49,7 +66,7 @@ CREATE TABLE nodes (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    parent_node_id UUID REFERENCES nodes(id) ON DELETE CASCADE,
+    parent_node_id UUID REFERENCES nodes(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -59,8 +76,8 @@ CREATE TABLE threads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(255) NOT NULL,
     content TEXT,
-    creator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    node_id UUID NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    node_id UUID REFERENCES nodes(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -70,9 +87,9 @@ CREATE TABLE threads (
 CREATE TABLE replies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     content TEXT NOT NULL,
-    creator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    thread_id UUID NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
-    parent_reply_id UUID REFERENCES replies(id) ON DELETE CASCADE,
+    creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    thread_id UUID REFERENCES threads(id) ON DELETE SET NULL,
+    parent_reply_id UUID REFERENCES replies(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -92,6 +109,9 @@ CREATE TABLE node_moderators (
 -- Como uma das colunas sempre será nula, a forma correta de garantir a unicidade no Postgres é com duas constraints
 -- UNIQUE parciais.
 CREATE TABLE votes (
+    -- Um id é redundante aqui, mas facilita a manutenção
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     thread_id UUID REFERENCES threads(id) ON DELETE CASCADE,
     reply_id UUID REFERENCES replies(id) ON DELETE CASCADE,
@@ -181,3 +201,5 @@ CREATE TRIGGER trg_tags_prevent_created_at_update BEFORE UPDATE ON tags FOR EACH
 
 CREATE TRIGGER set_timestamp_thread_tags BEFORE UPDATE ON thread_tags FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_thread_tags_prevent_created_at_update BEFORE UPDATE ON thread_tags FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
+
+CREATE TRIGGER trg_node_moderators_prevent_assigned_at_update BEFORE UPDATE ON node_moderators FOR EACH ROW EXECUTE FUNCTION prevent_assigned_at_update();

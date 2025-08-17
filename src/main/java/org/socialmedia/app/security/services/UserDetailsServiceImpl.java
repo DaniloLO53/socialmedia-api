@@ -1,7 +1,7 @@
 package org.socialmedia.app.security.services;
 
 import org.socialmedia.app.exceptions.ResourceNotFoundException;
-import org.socialmedia.app.models.user.User;
+import org.socialmedia.app.models.users.User;
 import org.socialmedia.app.repositories.users.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
