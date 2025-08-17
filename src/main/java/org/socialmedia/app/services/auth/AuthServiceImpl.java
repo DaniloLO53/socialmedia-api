@@ -1,7 +1,7 @@
 package org.socialmedia.app.services.auth;
 
 import org.socialmedia.app.exceptions.ConflictException;
-import org.socialmedia.app.models.user.User;
+import org.socialmedia.app.models.users.User;
 import org.socialmedia.app.payload.auth.SignInRequestPayload;
 import org.socialmedia.app.payload.auth.SignUpRequestPayload;
 import org.socialmedia.app.payload.auth.SignInResponsePayload;

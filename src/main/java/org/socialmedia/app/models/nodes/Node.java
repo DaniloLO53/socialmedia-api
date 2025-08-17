@@ -7,8 +7,12 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
-import org.socialmedia.app.models.user.User;
+import org.socialmedia.app.models.nodeModerators.NodeModerator;
+import org.socialmedia.app.models.threads.Thread;
+import org.socialmedia.app.models.users.User;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -18,7 +22,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = {""}) // Evita loops em logs
+@ToString(exclude = {"creator", "parentNode", "threads"}) // Evita loops em logs
 public class Node {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -41,6 +45,53 @@ public class Node {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_node_id", referencedColumnName = "id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Node parentNode;
+
+    @OneToMany(mappedBy = "parentNode", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Node> childNodes = new HashSet<>();
+
+    @OneToMany(mappedBy = "node", cascade = { CascadeType.MERGE, CascadeType.PERSIST }, orphanRemoval = false)
+    // Set é mais performático para adicionar / remover
+    private Set<Thread> threads;
+
+    @OneToMany(
+            mappedBy = "node",
+            cascade = { CascadeType.MERGE, CascadeType.PERSIST},
+            orphanRemoval = true
+    )
+    private Set<NodeModerator> moderators;
+
+    @ManyToMany(mappedBy = "subscribedNodes") // "subscribedNodes" é o nome do campo na entidade User
+    private Set<User> subscribers = new HashSet<>();
+
+    public void addChildNode(Node child) {
+        this.childNodes.add(child);
+        child.setParentNode(this);
+    }
+
+    public void removeChildNode(Node child) {
+        this.childNodes.remove(child);
+        child.setParentNode(null);
+    }
+
+    public void addThread(Thread thread) {
+        this.threads.add(thread);
+        thread.setNode(this);
+    }
+
+    public void removeThread(Thread thread) {
+        this.threads.remove(thread);
+        thread.setNode(null);
+    }
+
+    public void addModerator(NodeModerator moderator) {
+        this.moderators.add(moderator);
+        moderator.setNode(this);
+    }
+
+    public void removeModerator(NodeModerator moderator) {
+        this.moderators.remove(moderator);
+        moderator.setNode(null);
+    }
 }

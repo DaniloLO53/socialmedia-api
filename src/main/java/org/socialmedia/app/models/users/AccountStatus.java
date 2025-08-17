@@ -1,4 +1,4 @@
-package org.socialmedia.app.models.user;
+package org.socialmedia.app.models.users;
 
 public enum AccountStatus {
     ONLINE,
