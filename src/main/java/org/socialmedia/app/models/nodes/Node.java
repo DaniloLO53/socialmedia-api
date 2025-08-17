@@ -38,4 +38,9 @@ public class Node {
     @JoinColumn(name = "creator_id", referencedColumnName = "id")
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private User creator;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_node_id", referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Node parentNode;
 }
