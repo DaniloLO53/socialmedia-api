@@ -48,7 +48,7 @@ CREATE TABLE nodes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
     description TEXT,
-    creator_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
     parent_node_id UUID REFERENCES nodes(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
