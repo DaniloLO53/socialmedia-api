@@ -1,8 +1,8 @@
 package org.socialmedia.app.controllers;
 
 import jakarta.validation.Valid;
-import org.socialmedia.app.payload.nodes.CreateNodeRequest;
-import org.socialmedia.app.payload.nodes.CreateNodeResponse;
+import org.socialmedia.app.payload.nodes.CreateRootNodeRequest;
+import org.socialmedia.app.payload.nodes.CreateRootNodeResponse;
 import org.socialmedia.app.security.services.UserDetailsImpl;
 import org.socialmedia.app.services.nodes.NodeService;
 import org.springframework.http.HttpStatus;
@@ -23,11 +23,11 @@ public class NodeController {
     }
 
     @PostMapping("/nodes")
-    public ResponseEntity<CreateNodeResponse> createNode(
+    public ResponseEntity<CreateRootNodeResponse> createRootNode(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @RequestBody @Valid CreateNodeRequest payload
+            @RequestBody @Valid CreateRootNodeRequest payload
     ) {
-        CreateNodeResponse node = nodeService.createNode(userDetails, payload);
+        CreateRootNodeResponse node = nodeService.createRootNode(userDetails, payload);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(node);
     }
