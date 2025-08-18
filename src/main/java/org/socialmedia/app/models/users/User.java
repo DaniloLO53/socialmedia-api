@@ -97,9 +97,9 @@ public class User {
 
     @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
-        name = "node_subscriptions",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "node_id")
+            name = "node_subscriptions",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "node_id")
     )
     private Set<Node> subscribedNodes = new HashSet<>();
 

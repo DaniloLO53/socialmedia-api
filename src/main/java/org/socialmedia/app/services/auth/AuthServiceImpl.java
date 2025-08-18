@@ -1,6 +1,7 @@
 package org.socialmedia.app.services.auth;
 
 import org.socialmedia.app.exceptions.ConflictException;
+import org.socialmedia.app.models.users.AccountStatus;
 import org.socialmedia.app.models.users.User;
 import org.socialmedia.app.payload.auth.SignInRequestPayload;
 import org.socialmedia.app.payload.auth.SignUpRequestPayload;
@@ -58,10 +59,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void signUp(SignUpRequestPayload payload) {
         String email = payload.getEmail();
+        String username = payload.getUsername();
         String password = payload.getPassword();
         String passwordConfirmation = payload.getPasswordConfirmation();
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmail(email) || userRepository.existsByUsername(username)) {
            throw new ConflictException("Usuário já cadastrado");
         }
 
@@ -73,6 +75,8 @@ public class AuthServiceImpl implements AuthService {
         payload.setPassword(encodedPassword);
 
         User user = modelMapper.map(payload, User.class);
+
+        user.setAccountStatus(AccountStatus.OFFLINE); // Mudar para implementação com sockets
         userRepository.save(user);
     }
 
