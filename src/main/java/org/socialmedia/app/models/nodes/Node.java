@@ -2,7 +2,9 @@ package org.socialmedia.app.models.nodes;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -11,6 +13,7 @@ import org.socialmedia.app.models.nodeModerators.NodeModerator;
 import org.socialmedia.app.models.threads.Thread;
 import org.socialmedia.app.models.users.User;
 
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -32,7 +35,8 @@ public class Node {
     private UUID id;
 
     @NotBlank
-    @Column(length = 100, nullable = false)
+    @Size(max = 21, message = "Nome do node deve ter no máximo 21 caracteres")
+    @Column(length = 21, nullable = false)
     private String name;
 
     @NotBlank
@@ -53,17 +57,21 @@ public class Node {
 
     @OneToMany(mappedBy = "node", cascade = { CascadeType.MERGE, CascadeType.PERSIST }, orphanRemoval = false)
     // Set é mais performático para adicionar / remover
-    private Set<Thread> threads;
+    private Set<Thread> threads = new HashSet<>();
 
     @OneToMany(
             mappedBy = "node",
             cascade = { CascadeType.MERGE, CascadeType.PERSIST},
             orphanRemoval = true
     )
-    private Set<NodeModerator> moderators;
+    private Set<NodeModerator> moderators = new HashSet<>();
 
     @ManyToMany(mappedBy = "subscribedNodes") // "subscribedNodes" é o nome do campo na entidade User
     private Set<User> subscribers = new HashSet<>();
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    private OffsetDateTime createdAt;
 
     public void addChildNode(Node child) {
         this.childNodes.add(child);
@@ -93,9 +101,5 @@ public class Node {
     public void removeModerator(NodeModerator moderator) {
         this.moderators.remove(moderator);
         moderator.setNode(null);
-    }
-    public void setCreator(User creator) {
-        this.creator = creator;
-        creator.getNodes().add(this);
     }
 }

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.socialmedia.app.models.nodeModerators.NodeModerator;
@@ -14,6 +15,7 @@ import org.socialmedia.app.models.replies.Reply;
 import org.socialmedia.app.models.threads.Thread;
 import org.socialmedia.app.models.votes.Vote;
 
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -73,15 +75,15 @@ public class User {
 
     @OneToMany(mappedBy = "creator", cascade = { CascadeType.MERGE, CascadeType.PERSIST }, orphanRemoval = false)
     // Set é mais performático para adicionar / remover
-    private Set<Node> nodes;
+    private Set<Node> nodes = new HashSet<>();
 
     @OneToMany(mappedBy = "creator", cascade = { CascadeType.MERGE, CascadeType.PERSIST }, orphanRemoval = false)
     // Set é mais performático para adicionar / remover
-    private Set<Thread> threads;
+    private Set<Thread> threads = new HashSet<>();
 
     @OneToMany(mappedBy = "creator", cascade = { CascadeType.MERGE, CascadeType.PERSIST }, orphanRemoval = false)
     // Set é mais performático para adicionar / remover
-    private Set<Reply> replies;
+    private Set<Reply> replies = new HashSet<>();
 
     @OneToMany(
             mappedBy = "user", // 'user' é o nome do campo em NodeModerator
@@ -89,11 +91,11 @@ public class User {
             orphanRemoval = true
     )
     // Set para reforçar que um usuário só pode ser moderador de um node uma única vez
-    private Set<NodeModerator> moderatedNodes;
+    private Set<NodeModerator> moderatedNodes = new HashSet<>();
 
     // Set para reforçar que um usuário só pode ser moderador de um node uma única vez
     @OneToMany(mappedBy = "user", cascade = { CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true)
-    private Set<Vote> votes;
+    private Set<Vote> votes = new HashSet<>();
 
     @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
@@ -102,6 +104,10 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "node_id")
     )
     private Set<Node> subscribedNodes = new HashSet<>();
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    private OffsetDateTime createdAt;
 
     // Métodos auxiliares para gerenciar o relacionamento (Boa Prática)
     public void addNode(Node node) {
