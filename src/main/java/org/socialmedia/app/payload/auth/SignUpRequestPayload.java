@@ -31,4 +31,8 @@ public class SignUpRequestPayload {
     @NotBlank(message = "O sobrenome não pode estar em branco.")
     @Size(max = 50, message = "O sobrenome não pode exceder 50 caracteres.")
     private String lastName;
+
+    @NotBlank(message = "O username não pode estar em branco.")
+    @Size(min = 3, max = 100, message = "O username não pode exceder 100 caracteres, nem ter menos de 3 caracteres.")
+    private String username;
 }

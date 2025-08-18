@@ -2,6 +2,7 @@ package org.socialmedia.app.security.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import org.socialmedia.app.models.users.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -12,12 +13,14 @@ public class UserDetailsImpl implements UserDetails {
     private final @Getter UUID id;
     private final String email;
     private @JsonIgnore String password;
+    private @Getter User user;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(UUID id, String email, String password) {
+    public UserDetailsImpl(UUID id, String email, String password, User user) {
         this.id = id;
         this.email = email;
         this.password = password;
+        this.user = user;
     }
 
     public UserDetailsImpl(UUID id, String email, Collection<? extends GrantedAuthority> authorities) {

@@ -21,6 +21,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository
                 .findFirstByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Usuário", "email", email));
 
-        return new UserDetailsImpl(user.getId(), email, user.getPassword());
+        return new UserDetailsImpl(user.getId(), email, user.getPassword(), user);
     }
 }

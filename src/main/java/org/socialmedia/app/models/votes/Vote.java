@@ -45,7 +45,6 @@ public class Vote {
     private Reply reply;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.ORDINAL)
     private Short direction;
 
     // Metodo auxiliar para usar o Enum de forma segura

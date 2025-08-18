@@ -94,4 +94,8 @@ public class Node {
         this.moderators.remove(moderator);
         moderator.setNode(null);
     }
+    public void setCreator(User creator) {
+        this.creator = creator;
+        creator.getNodes().add(this);
+    }
 }

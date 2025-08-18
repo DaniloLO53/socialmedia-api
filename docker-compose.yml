@@ -1,58 +1,58 @@
-# Define os containers que farão parte da nossa aplicação.
-services:
-  # 1. O serviço do banco de dados PostgreSQL
-  db:
-    image: postgres:16-alpine # Imagem oficial do Postgres, versão 16, variante Alpine (mais leve).
-    container_name: socialmedia-db
-    restart: unless-stopped # Reinicia o container a menos que ele seja parado manualmente.
-    environment:
-      # Essas variáveis configuram o usuário, senha e o banco de dados inicial do Postgres.
-      # Elas DEVEM ser as mesmas que sua aplicação Java espera.
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1281
-      POSTGRES_DB: socialmedia
-    ports:
-      # Mapeia a porta 5432 do container para a porta 5433 da sua máquina local.
-      - "5433:5432"
-    networks:
-      - internal_net
-    volumes:
-      # Mapeia um volume nomeado para a pasta de dados do Postgres dentro do container.
-      # Isso garante que os dados persistam mesmo se o container for removido e recriado.
-      - postgres_data:/var/lib/postgresql/data
-
-  # 2. O serviço da sua aplicação Java/Spring Boot
-  app:
-    container_name: socialmedia-app
-    # Em vez de 'image', usamos 'build'. Isso diz ao Docker Compose para
-    # construir a imagem a partir do Dockerfile que está na pasta atual ('.').
-    build: .
-    restart: on-failure # Reinicia o container se ele parar com erro.
-    ports:
-      # Mapeamento para DESENVOLVIMENTO:
-      # Mapeia a porta 8080 do container (definida no seu application.properties e aqui)
-      # para a porta 8090 da sua máquina local.
-      - "8090:8080"
-    networks:
-      - internal_net
-    environment:
-      # Aqui está a mágica! Essas variáveis de ambiente substituem as do seu application.properties.
-      # A aplicação Java usará esses valores para se conectar ao banco de dados.
-      # Força a aplicação DENTRO do container a rodar na porta 8080 (não é necessário)
-      SERVER_PORT: 8080
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/socialmedia
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 1281
-      SPRING_PROFILES_ACTIVE: dev # Ativa o perfil de desenvolvimento, se necessário.
-    depends_on:
-      # Garante que o container 'db' seja iniciado ANTES do container 'app'.
-      - db
-
-networks:
-  internal_net:
-    driver: bridge
-
-# Define os volumes nomeados que usamos acima.
-volumes:
-  postgres_data:
-    driver: local
+## Define os containers que farão parte da nossa aplicação.
+#services:
+#  # 1. O serviço do banco de dados PostgreSQL
+#  db:
+#    image: postgres:16-alpine # Imagem oficial do Postgres, versão 16, variante Alpine (mais leve).
+#    container_name: socialmedia-db
+#    restart: unless-stopped # Reinicia o container a menos que ele seja parado manualmente.
+#    environment:
+#      # Essas variáveis configuram o usuário, senha e o banco de dados inicial do Postgres.
+#      # Elas DEVEM ser as mesmas que sua aplicação Java espera.
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: 1281
+#      POSTGRES_DB: socialmedia
+#    ports:
+#      # Mapeia a porta 5432 do container para a porta 5433 da sua máquina local.
+#      - "5433:5432"
+#    networks:
+#      - internal_net
+#    volumes:
+#      # Mapeia um volume nomeado para a pasta de dados do Postgres dentro do container.
+#      # Isso garante que os dados persistam mesmo se o container for removido e recriado.
+#      - postgres_data:/var/lib/postgresql/data
+#
+#  # 2. O serviço da sua aplicação Java/Spring Boot
+#  app:
+#    container_name: socialmedia-app
+#    # Em vez de 'image', usamos 'build'. Isso diz ao Docker Compose para
+#    # construir a imagem a partir do Dockerfile que está na pasta atual ('.').
+#    build: .
+#    restart: on-failure # Reinicia o container se ele parar com erro.
+#    ports:
+#      # Mapeamento para DESENVOLVIMENTO:
+#      # Mapeia a porta 8080 do container (definida no seu application.properties e aqui)
+#      # para a porta 8090 da sua máquina local.
+#      - "8090:8080"
+#    networks:
+#      - internal_net
+#    environment:
+#      # Aqui está a mágica! Essas variáveis de ambiente substituem as do seu application.properties.
+#      # A aplicação Java usará esses valores para se conectar ao banco de dados.
+#      # Força a aplicação DENTRO do container a rodar na porta 8080 (não é necessário)
+#      SERVER_PORT: 8080
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/socialmedia
+#      SPRING_DATASOURCE_USERNAME: postgres
+#      SPRING_DATASOURCE_PASSWORD: 1281
+#      SPRING_PROFILES_ACTIVE: dev # Ativa o perfil de desenvolvimento, se necessário.
+#    depends_on:
+#      # Garante que o container 'db' seja iniciado ANTES do container 'app'.
+#      - db
+#
+#networks:
+#  internal_net:
+#    driver: bridge
+#
+## Define os volumes nomeados que usamos acima.
+#volumes:
+#  postgres_data:
+#    driver: local
