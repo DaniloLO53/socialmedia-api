@@ -61,9 +61,77 @@ CREATE TABLE users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Calcular este score em tempo real a cada ação seria computacionalmente caro. A melhor abordagem seria:
+-- Ideia 1 (melhor): Job Agendado (Batch): Um job rodando em segundo plano (a cada hora ou a cada dia) recalcula os scores de todos os usuários ativos.
+-- Ideia 2: Arquitetura Orientada a Eventos: Cada ação (upvote, delegação, post removido) publica um evento. Serviços consumidores (listeners) atualizam o score do usuário de forma incremental e assíncrona. Isso mantém o sistema reativo e performático.
+-- Prevenção de abuso: Retornos Decrescentes (Diminishing Returns): O impacto de ações repetidas pode diminuir. Por exemplo, os 100 primeiros upvotes que você recebe em um mês contribuem com 100% para o seu score, os 100 seguintes com 80%, e assim por diante. Isso desencoraja o "farming" de reputação.
+CREATE TABLE score (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- A pontuação final de reputação do usuário, calculada a partir dos fatores abaixo.
+    -- O valor total é a média ponderada dos fatores abaixo.
+    value BIGINT NOT NULL DEFAULT 0,
+    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+
+    -- (Aumenta - Peso: 20%) Votos diretos de confiança que o usuário recebeu de outros.
+    -- Para evitar abuso, o peso do voto de quem endossa é proporcional ao seu próprio score.
+    endorsements_received INTEGER NOT NULL DEFAULT 0,
+
+    -- (Aumenta - Peso: 25%) O número de usuários que atualmente delegam seu "Peso de Voto" a este usuário.
+    -- Ser um delegado confiável é um grande sinal de valor.
+    delegations_received INTEGER NOT NULL DEFAULT 0,
+
+    -- ====================================================================
+    -- Fatores de Contribuição de Conteúdo (Aumentam o Score)
+    -- ====================================================================
+
+    -- (Aumenta - Peso: 30%) A soma líquida de (upvotes - downvotes) em todas as threads e replies do usuário.
+    -- O coração do sistema de reputação baseado em conteúdo.
+    net_content_score INTEGER NOT NULL DEFAULT 0,
+
+    -- (Aumenta - Peso: 10%) O número de vezes que uma das replies do usuário foi marcada como "Melhor Resposta".
+    -- Incentiva respostas úteis e corretas, especialmente em nodes acadêmicos.
+    best_answer_awards INTEGER NOT NULL DEFAULT 0,
+
+    -- (Aumenta - Peso: 5%) Um bônus por cada node ativo criado pelo usuário (ex: que atingiu 100 inscritos).
+    -- Incentiva a criação de comunidades saudáveis.
+    active_nodes_created INTEGER NOT NULL DEFAULT 0,
+
+    -- ====================================================================
+    -- Fatores de Governança e Moderação (Aumentam o Score)
+    -- ====================================================================
+
+    -- (Aumenta - Peso: 5%) Contador de participação em votações de propostas de regras, incentivando o engajamento cívico.
+    governance_votes_cast INTEGER NOT NULL DEFAULT 0,
+
+    -- (Aumenta - Peso: 5%) O número de ações de moderação sugeridas pelo usuário que foram aprovadas pela comunidade.
+    -- Recompensa o bom julgamento.
+    successful_mod_actions INTEGER NOT NULL DEFAULT 0,
+
+    -- ====================================================================
+    -- Fatores de Penalidade (Diminuem o Score)
+    -- ====================================================================
+
+    -- (Diminui - Peso: -2.0) O número de posts ou comentários do usuário que foram removidos por votação da comunidade.
+    content_removed_count INTEGER NOT NULL DEFAULT 0,
+
+    -- (Diminui - Peso: -5.0) O número de vezes que o usuário foi punido (mute ou ban) pela comunidade.
+    punishments_received_count INTEGER NOT NULL DEFAULT 0,
+
+    -- (Diminui - Peso: -1.0) O número de vezes que o conteúdo do usuário foi reportado e a infração foi confirmada pela moderação.
+    confirmed_reports_count INTEGER NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Índices para otimizar consultas
+CREATE INDEX idx_score_user_id ON score(user_id);
+CREATE INDEX idx_score_value ON score(value DESC); -- Para buscar rapidamente os usuários com maior reputação
+
 CREATE TABLE nodes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(21) NOT NULL,
     description TEXT,
     creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
     parent_node_id UUID REFERENCES nodes(id) ON DELETE SET NULL,
@@ -108,7 +176,7 @@ CREATE TABLE node_moderators (
 -- A chave primária seria (user_id, thread_id) para votos em threads e (user_id, reply_id) para votos em replies.
 -- Como uma das colunas sempre será nula, a forma correta de garantir a unicidade no Postgres é com duas constraints
 -- UNIQUE parciais.
-CREATE TABLE votes (
+CREATE TABLE simple_votes (
     -- Um id é redundante aqui, mas facilita a manutenção
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -169,14 +237,19 @@ CREATE INDEX idx_replies_creator_id ON replies(creator_id);
 CREATE INDEX idx_replies_parent_reply_id ON replies(parent_reply_id);
 CREATE INDEX idx_replies_thread_id_created_at ON replies(thread_id, created_at ASC);
 CREATE INDEX idx_node_moderators_node_id ON node_moderators(node_id);
-CREATE INDEX idx_votes_thread_id ON votes(thread_id);
-CREATE INDEX idx_votes_reply_id ON votes(reply_id);
+CREATE INDEX idx_simple_votes_thread_id ON simple_votes(thread_id);
+CREATE INDEX idx_simple_votes_reply_id ON simple_votes(reply_id);
 CREATE INDEX idx_node_subscriptions_node_id ON node_subscriptions(node_id);
 CREATE INDEX idx_thread_tags_tag_id ON thread_tags(tag_id);
+CREATE INDEX idx_score_user_id ON score(user_id);
+CREATE INDEX idx_score_value ON score(value DESC); -- Para buscar rapidamente os usuários com maior reputação
 
 
 CREATE TRIGGER set_timestamp_users BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_users_prevent_created_at_update BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
+
+CREATE TRIGGER set_timestamp_score BEFORE UPDATE ON score FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+CREATE TRIGGER trg_score_prevent_created_at_update BEFORE UPDATE ON score FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
 
 CREATE TRIGGER set_timestamp_nodes BEFORE UPDATE ON nodes FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_nodes_prevent_created_at_update BEFORE UPDATE ON nodes FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
@@ -190,8 +263,8 @@ CREATE TRIGGER trg_replies_prevent_created_at_update BEFORE UPDATE ON replies FO
 CREATE TRIGGER set_timestamp_node_moderators BEFORE UPDATE ON node_moderators FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_node_moderators_prevent_created_at_update BEFORE UPDATE ON node_moderators FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
 
-CREATE TRIGGER set_timestamp_votes BEFORE UPDATE ON votes FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
-CREATE TRIGGER trg_votes_prevent_created_at_update BEFORE UPDATE ON votes FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
+CREATE TRIGGER set_timestamp_simple_votes BEFORE UPDATE ON simple_votes FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+CREATE TRIGGER trg_simple_votes_prevent_created_at_update BEFORE UPDATE ON simple_votes FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
 
 CREATE TRIGGER set_timestamp_node_subscriptions BEFORE UPDATE ON node_subscriptions FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_node_subscriptions_prevent_created_at_update BEFORE UPDATE ON node_subscriptions FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
