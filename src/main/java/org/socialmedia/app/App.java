@@ -12,12 +12,12 @@ public class App {
         SpringApplication.run(App.class, args);
     }
 
-//    @Bean
-//    public FlywayMigrationStrategy cleanMigrateStrategy() {
-//        return flyway -> {
-//            flyway.repair();
-//            flyway.migrate();
-//        };
-//    }
+    @Bean
+    public FlywayMigrationStrategy cleanMigrateStrategy() {
+        return flyway -> {
+            flyway.repair();
+            flyway.migrate();
+        };
+    }
 
 }
