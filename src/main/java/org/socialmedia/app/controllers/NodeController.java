@@ -1,6 +1,8 @@
 package org.socialmedia.app.controllers;
 
 import jakarta.validation.Valid;
+import org.socialmedia.app.payload.moderators.AddModeratorRequest;
+import org.socialmedia.app.payload.moderators.AddModeratorResponse;
 import org.socialmedia.app.payload.nodes.CreateRootNodeRequest;
 import org.socialmedia.app.payload.nodes.CreateRootNodeResponse;
 import org.socialmedia.app.payload.nodes.CreateSubNodeRequest;
@@ -44,5 +46,16 @@ public class NodeController {
         CreateSubNodeResponse node = nodeService.createSubNode(userDetails, parentNodeId, payload);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(node);
+    }
+
+    @PostMapping("/nodes/{nodeId}/moderators")
+    @PreAuthorize("@permissionService.checkIsNodeCreator(authentication, #nodeId)")
+    public ResponseEntity<AddModeratorResponse> addModerator(
+            @RequestBody @Valid AddModeratorRequest payload,
+            @PathVariable UUID nodeId
+            ) {
+        AddModeratorResponse moderator = nodeService.addModerator(nodeId, payload);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(moderator);
     }
 }
