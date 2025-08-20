@@ -3,12 +3,17 @@ package org.socialmedia.app.services.nodes;
 import org.modelmapper.ModelMapper;
 import org.socialmedia.app.exceptions.ConflictException;
 import org.socialmedia.app.exceptions.ResourceNotFoundException;
+import org.socialmedia.app.models.nodeModerators.NodeModerator;
+import org.socialmedia.app.models.nodeModerators.NodeModeratorId;
 import org.socialmedia.app.models.nodes.Node;
 import org.socialmedia.app.models.users.User;
+import org.socialmedia.app.payload.moderators.AddModeratorRequest;
+import org.socialmedia.app.payload.moderators.AddModeratorResponse;
 import org.socialmedia.app.payload.nodes.CreateRootNodeRequest;
 import org.socialmedia.app.payload.nodes.CreateRootNodeResponse;
 import org.socialmedia.app.payload.nodes.CreateSubNodeRequest;
 import org.socialmedia.app.payload.nodes.CreateSubNodeResponse;
+import org.socialmedia.app.repositories.nodeModerators.NodeModeratorRepository;
 import org.socialmedia.app.repositories.nodes.NodeRepository;
 import org.socialmedia.app.repositories.users.UserRepository;
 import org.socialmedia.app.security.services.UserDetailsImpl;
@@ -16,6 +21,7 @@ import org.socialmedia.app.utils.SlugUtil;
 import org.socialmedia.app.utils.TimeUtil;
 import org.socialmedia.app.utils.UnicodeNormalizer;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -25,11 +31,17 @@ public class NodeServiceImpl implements NodeService {
     private final ModelMapper modelMapper;
     private final NodeRepository nodeRepository;
     private final UserRepository userRepository;
+    private final NodeModeratorRepository moderatorRepository;
 
-    public NodeServiceImpl(ModelMapper modelMapper, NodeRepository nodeRepository, UserRepository userRepository) {
+    public NodeServiceImpl(ModelMapper modelMapper,
+                           NodeRepository nodeRepository,
+                           UserRepository userRepository,
+                           NodeModeratorRepository moderatorRepository
+    ) {
         this.modelMapper = modelMapper;
         this.nodeRepository = nodeRepository;
         this.userRepository = userRepository;
+        this.moderatorRepository = moderatorRepository;
     }
 
     @Override
@@ -38,7 +50,7 @@ public class NodeServiceImpl implements NodeService {
         User detachedCreator = userDetails.getUser();
 
         // Aqui, uma nova transação é aberta
-        User creator = userRepository.findFirstById(detachedCreator.getId());
+        User creator = userRepository.findFirstById(detachedCreator.getId()).orElseThrow(() -> new ResourceNotFoundException("Usuário", "id", detachedCreator.getId().toString()));
         String normalizedNodeName = SlugUtil.validateAndSanitizeName(payload.name());
 
         if (nodeRepository.existsByNameIgnoreCaseAndParentNodeIsNull(normalizedNodeName)) {
@@ -69,7 +81,8 @@ public class NodeServiceImpl implements NodeService {
         User detachedCreator = userDetails.getUser();
 
         // Aqui, uma nova transação é aberta
-        User creator = userRepository.findFirstById(detachedCreator.getId());
+        User creator = userRepository.findFirstById(detachedCreator.getId()).orElseThrow(() -> new ResourceNotFoundException("Usuário", "id", detachedCreator.getId().toString()));
+
         String normalizedNodeName = SlugUtil.validateAndSanitizeName(payload.name());
 
         if (verifyUserReputation(creator)) {
@@ -99,6 +112,29 @@ public class NodeServiceImpl implements NodeService {
         Node savedNode = nodeRepository.save(newNode);
 
         return modelMapper.map(savedNode, CreateSubNodeResponse.class);
+    }
+
+    @Override
+    @Transactional
+    public AddModeratorResponse addModerator(UUID nodeId, AddModeratorRequest payload) {
+        Node node = nodeRepository.findFirstById(nodeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Node", "id", nodeId.toString()));
+        User newModeratorUser = userRepository.findFirstById(payload.userId())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário", "id", payload.userId().toString()));
+        NodeModeratorId moderatorId = new NodeModeratorId(payload.userId(), nodeId);
+
+        if (moderatorRepository.existsById(moderatorId)) {
+            throw new ConflictException("Este usuário já é um moderador do node.");
+        }
+
+        if (node.getCreator() != null && node.getCreator().getId().equals(payload.userId())) {
+            throw new ConflictException("O criador do node não pode ser adicionado como moderador.");
+        }
+
+        NodeModerator newModerator = new NodeModerator(newModeratorUser, node);
+        moderatorRepository.save(newModerator);
+
+        return new AddModeratorResponse(payload.userId());
     }
 
     private void verifyNestedNodesDepthLimit(Node parentNode) {

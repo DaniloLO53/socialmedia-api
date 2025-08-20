@@ -14,6 +14,13 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 public class NodeModerator {
+    public NodeModerator(User user, Node node) {
+        this.user = user;
+        this.node = node;
+        this.id = new NodeModeratorId(user.getId(), node.getId());
+    }
+
+    public NodeModerator() {}
 
     @EmbeddedId
     private NodeModeratorId id;
