@@ -108,7 +108,7 @@ CREATE TABLE node_moderators (
 -- A chave primária seria (user_id, thread_id) para votos em threads e (user_id, reply_id) para votos em replies.
 -- Como uma das colunas sempre será nula, a forma correta de garantir a unicidade no Postgres é com duas constraints
 -- UNIQUE parciais.
-CREATE TABLE simple_votes (
+CREATE TABLE votes (
     -- Um id é redundante aqui, mas facilita a manutenção
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -169,12 +169,10 @@ CREATE INDEX idx_replies_creator_id ON replies(creator_id);
 CREATE INDEX idx_replies_parent_reply_id ON replies(parent_reply_id);
 CREATE INDEX idx_replies_thread_id_created_at ON replies(thread_id, created_at ASC);
 CREATE INDEX idx_node_moderators_node_id ON node_moderators(node_id);
-CREATE INDEX idx_simple_votes_thread_id ON simple_votes(thread_id);
-CREATE INDEX idx_simple_votes_reply_id ON simple_votes(reply_id);
+CREATE INDEX idx_votes_thread_id ON votes(thread_id);
+CREATE INDEX idx_votes_reply_id ON votes(reply_id);
 CREATE INDEX idx_node_subscriptions_node_id ON node_subscriptions(node_id);
 CREATE INDEX idx_thread_tags_tag_id ON thread_tags(tag_id);
-CREATE INDEX idx_score_user_id ON score(user_id);
-CREATE INDEX idx_score_value ON score(value DESC); -- Para buscar rapidamente os usuários com maior reputação
 
 
 CREATE TRIGGER set_timestamp_users BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
@@ -195,8 +193,8 @@ CREATE TRIGGER trg_replies_prevent_created_at_update BEFORE UPDATE ON replies FO
 CREATE TRIGGER set_timestamp_node_moderators BEFORE UPDATE ON node_moderators FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_node_moderators_prevent_created_at_update BEFORE UPDATE ON node_moderators FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
 
-CREATE TRIGGER set_timestamp_simple_votes BEFORE UPDATE ON simple_votes FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
-CREATE TRIGGER trg_simple_votes_prevent_created_at_update BEFORE UPDATE ON simple_votes FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
+CREATE TRIGGER set_timestamp_votes BEFORE UPDATE ON votes FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
+CREATE TRIGGER trg_votes_prevent_created_at_update BEFORE UPDATE ON votes FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
 
 CREATE TRIGGER set_timestamp_node_subscriptions BEFORE UPDATE ON node_subscriptions FOR EACH ROW EXECUTE FUNCTION trigger_set_timestamp();
 CREATE TRIGGER trg_node_subscriptions_prevent_created_at_update BEFORE UPDATE ON node_subscriptions FOR EACH ROW EXECUTE FUNCTION prevent_created_at_update();
