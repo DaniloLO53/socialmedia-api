@@ -9,6 +9,7 @@ import org.socialmedia.app.models.nodes.Node;
 import org.socialmedia.app.models.users.User;
 import org.socialmedia.app.payload.moderators.AddModeratorRequest;
 import org.socialmedia.app.payload.moderators.AddModeratorResponse;
+import org.socialmedia.app.payload.moderators.GetNodeModeratorsResponse;
 import org.socialmedia.app.payload.nodes.CreateRootNodeRequest;
 import org.socialmedia.app.payload.nodes.CreateRootNodeResponse;
 import org.socialmedia.app.payload.nodes.CreateSubNodeRequest;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -135,6 +137,19 @@ public class NodeServiceImpl implements NodeService {
         moderatorRepository.save(newModerator);
 
         return new AddModeratorResponse(payload.userId());
+    }
+
+    @Override
+    public List<GetNodeModeratorsResponse> getNodeModerators(UUID nodeId) {
+        Node node = nodeRepository
+                .findFirstById(nodeId).orElseThrow(() -> new ResourceNotFoundException("Node", "id", nodeId.toString()));
+
+        List<User> moderators = node.getModerators().stream().map(NodeModerator::getUser).toList();
+
+        return moderators
+                .stream()
+                .map(proj -> modelMapper.map(proj, GetNodeModeratorsResponse.class))
+                .toList();
     }
 
     private void verifyNestedNodesDepthLimit(Node parentNode) {

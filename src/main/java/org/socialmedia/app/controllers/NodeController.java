@@ -3,6 +3,7 @@ package org.socialmedia.app.controllers;
 import jakarta.validation.Valid;
 import org.socialmedia.app.payload.moderators.AddModeratorRequest;
 import org.socialmedia.app.payload.moderators.AddModeratorResponse;
+import org.socialmedia.app.payload.moderators.GetNodeModeratorsResponse;
 import org.socialmedia.app.payload.nodes.CreateRootNodeRequest;
 import org.socialmedia.app.payload.nodes.CreateRootNodeResponse;
 import org.socialmedia.app.payload.nodes.CreateSubNodeRequest;
@@ -15,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -57,5 +59,12 @@ public class NodeController {
         AddModeratorResponse moderator = nodeService.addModerator(nodeId, payload);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(moderator);
+    }
+
+    @GetMapping("/nodes/{nodeId}/moderators")
+    public ResponseEntity<List<GetNodeModeratorsResponse>> getNodeModerators(@PathVariable UUID nodeId) {
+        List<GetNodeModeratorsResponse> moderators = nodeService.getNodeModerators(nodeId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(moderators);
     }
 }

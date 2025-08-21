@@ -1,8 +1,8 @@
 package org.socialmedia.app.repositories.users;
 
+import org.socialmedia.app.models.users.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import org.socialmedia.app.models.users.User;
 
 import java.util.Optional;
 import java.util.UUID;
