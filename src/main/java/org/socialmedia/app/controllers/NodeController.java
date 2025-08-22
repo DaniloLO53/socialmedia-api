@@ -61,6 +61,14 @@ public class NodeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(moderator);
     }
 
+    @DeleteMapping("/nodes/{nodeId}/moderators/{moderatorUserId}")
+    @PreAuthorize("@permissionService.checkIsNodeCreator(authentication, #nodeId)")
+    public ResponseEntity<?> deleteModerator(@PathVariable UUID nodeId, @PathVariable UUID moderatorUserId) {
+        nodeService.deleteModerator(nodeId, moderatorUserId);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+    }
+
     @GetMapping("/nodes/{nodeId}/moderators")
     public ResponseEntity<List<GetNodeModeratorsResponse>> getNodeModerators(@PathVariable UUID nodeId) {
         List<GetNodeModeratorsResponse> moderators = nodeService.getNodeModerators(nodeId);
