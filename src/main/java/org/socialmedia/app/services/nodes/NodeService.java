@@ -18,4 +18,5 @@ public interface NodeService {
     CreateSubNodeResponse createSubNode(UserDetailsImpl userDetails, UUID parentNodeId, CreateSubNodeRequest payload);
     AddModeratorResponse addModerator(UUID nodeId, AddModeratorRequest payload);
     List<GetNodeModeratorsResponse> getNodeModerators(UUID nodeId);
+    void deleteModerator(UUID nodeId, UUID moderatorUserId);
 }

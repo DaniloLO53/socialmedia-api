@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -137,6 +138,23 @@ public class NodeServiceImpl implements NodeService {
         moderatorRepository.save(newModerator);
 
         return new AddModeratorResponse(payload.userId());
+    }
+
+    @Override
+    public void deleteModerator(UUID nodeId, UUID moderatorUserId) {
+        Node node = nodeRepository
+                .findFirstById(nodeId).orElseThrow(() -> new ResourceNotFoundException("Node", "id", nodeId.toString()));
+
+        Set<NodeModerator> moderators = node.getModerators();
+
+        NodeModerator moderatorToRemove = moderators.stream()
+                .filter(mod -> mod.getUser().getId().equals(moderatorUserId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Moderador", "id", moderatorUserId.toString()));
+
+        moderators.remove(moderatorToRemove);
+
+        nodeRepository.save(node);
     }
 
     @Override
